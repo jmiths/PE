@@ -1,8 +1,11 @@
 #!/usr/bin/python3
+# Solution for https://projecteuler.net/problem=61
 
+# Dictionary with format {First Two Digits : [['Tri','SQ',etc.], Second Two digits]}
 all_nums = {}
 
-# TRI
+# Generate all Triangular Number for Four digits (1000 - 9999)
+# Code could be condensed for each generation
 # (x*(x+1))/2 > 1000
 # x*(x+1) > 2000
 # x^2 + x > 2000
@@ -26,7 +29,7 @@ while n < 10000:
     x = x + 1
     n = (x*(x+1))/2
 
-# SQ
+# Generate all Square Numbers for Four Digits (1000,9999)
 # x^2 > 1000
 # x^2 - 1000 > 0
 # Over at 32
@@ -48,7 +51,7 @@ while n < 10000:
     x = x + 1
     n = x ** 2
 
-# PENT
+# Generate all PENT numbers for Four Digits (1000,9999)
 # (x(3x-1))/2 > 1000
 # x(3x-1) > 2000
 # 3x^2 - x > 2000
@@ -72,7 +75,7 @@ while n < 10000:
     x = x + 1
     n = (x*(3*x-1))/2
 
-# HEXA
+# Generate all HEXA numbers for Four digits (1000,9999)
 # x*(2x-1) > 1000
 # 2x^2 - x > 1000
 # 2x^2 - x - 1000 > 0
@@ -95,7 +98,7 @@ while n < 10000:
     x = x + 1
     n = x*(2*x-1)
 
-# HEPT
+# Generate all HEPT numbers for four digits (1000,9999)
 # x(5x-3)/2 > 1000
 # x(5x-3) > 2000
 # 5x^2 - 3x - 2000 > 0
@@ -118,7 +121,7 @@ while n < 10000:
     x = x + 1
     n = (x*(5*x-3))/2
 
-#OCTA
+# Generate all OCTA numbers for four digits (1000,9999)
 # x(3x-2) > 1000
 # 3x^2-2x - 1000 > 0
 # Over at 19
@@ -140,10 +143,12 @@ while n < 10000:
     x = x + 1
     n = x*(3*x-2)
 
+# Print the list to see if we got it
 for key in all_nums:
     print(key + ": ",end="")
     print(all_nums[key])
 
+#Figure out which bit of the solution string each digit type will give, could enum, but harder to debug
 def which_bit(string):
     if string == "TRI":
         return 0
@@ -161,47 +166,41 @@ def which_bit(string):
         print("PANIC at: " + string)
         exit
 
+# When we are building the solution string we need to mark which bits we use, so we can decide if we can use the next chain
 def mark_a_bit(v,arr):
     arr[which_bit(v[0])] = 1
     return arr
 
+# If we ran out of chains, then we have to regress and build a different way, so we need to unmark the bit of the solution string
 def unmark_bit(v,arr):
     arr[which_bit(v[0])] = 0
     return arr
 
-def can_progress(bits,v):
-    if v[1] not in all_nums or bits[which_bit(v[0])] != 0:
+# Can we continue to build chains or revert?
+def can_progress(bits,v): # Takes in solution string and prospective chain continuation
+    if v[1] not in all_nums or bits[which_bit(v[0])] != 0: # If prospective chain can't continue on after this, then abort early or if the bit we want to change is not zero
         return False
     else:
         return True
 
-# Write iterative, recur is hard
-#def recur(solution,bits,nex):
-#    if len(solution) == 6:
-#        return solution
-#    elif nex in all_nums:
-#        for value in all_nums[nex]:
-#            if can_progress(bits,value[0]):
-#                solution.append(value)
-#                return recur(solution,mark_a_bit(value[0],bits),value[1])
-
-def reconstruct(solution):
+# Build the solution string to actual values so that I can read the final solution and then print
+def reconstruct(solution): 
     arr = []
     for i in range(len(solution)):
         arr.append(int(solution[i-1][1]+solution[i][1]))
     print(arr)
     print(sum(arr))
 
-for key in all_nums:
-    for v1 in all_nums[key]:
-        bits = [0,0,0,0,0,0] #TRI,SQ,PENT,HEXA,HEPT,OCTA
-        solution = [v1]
-        bits = mark_a_bit(v1,bits)
-        if v1[1] in all_nums:
-            for v2 in all_nums[v1[1]]:
-                if can_progress(bits,v2):
-                    solution.append(v2)
-                    bits = mark_a_bit(v2,bits)
+for key in all_nums: # Start reading the whole dict
+    for v1 in all_nums[key]: # For the values, step one level down and look through the next level
+        bits = [0,0,0,0,0,0] #TRI,SQ,PENT,HEXA,HEPT,OCTA # Init solution bitmask
+        solution = [v1] # Init solution string
+        bits = mark_a_bit(v1,bits) # Mark the first bit with the item I started with
+        if v1[1] in all_nums: # Is 1 level down still in the set?
+            for v2 in all_nums[v1[1]]: #Use Previous value to find new subset of values
+                if can_progress(bits,v2): # Do the first two match or can we continue?
+                    solution.append(v2) # Add to solution string
+                    bits = mark_a_bit(v2,bits) # Repeat until solved
                     for v3 in all_nums[v2[1]]:
                         if can_progress(bits,v3):
                             solution.append(v3)
@@ -218,17 +217,17 @@ for key in all_nums:
                                                 if can_progress(bits,v6):
                                                     solution.append(v6)
                                                     for v7 in all_nums[v6[1]]:
-                                                        if v1 == v7:
-                                                            reconstruct(solution)
+                                                        if v1 == v7: # If the start and end value is the same then we are finished
+                                                            reconstruct(solution) # Print readable solution string
                                                             solution.append(v7)
                                                             print()
-                                                            print(solution)
+                                                            print(solution) # Print order
                                                             solution.pop()
-                                                            quit()
-                                                    solution.pop()
-                                            bits = unmark_bit(v5,bits)
+                                                            quit() # I only need one
+                                                    solution.pop() # If I failed, regress
+                                            bits = unmark_bit(v5,bits) # If failed, regress
                                             solution.pop()
-                                    solution.pop()
+                                    solution.pop() # If failed, regress
                                     bits = unmark_bit(v4,bits)
                             solution.pop()
                             bits = unmark_bit(v3,bits)
